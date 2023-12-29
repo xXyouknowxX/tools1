@@ -367,64 +367,41 @@ def main():
     access_key = input("Enter your AWS Access Key ID: ")
     secret_key = getpass.getpass("Enter your AWS Secret Access Key: ")
     
-    # Get user's choice of regions
     chosen_regions = get_user_region_choice()
-
-    for region in chosen_regions:
-        session = get_aws_session(access_key, secret_key, region)
-
-        print(f"\n--- Listing resources in {region} ---")
-        print("\nListing EC2 instances:")
-        list_ec2_instances(session, region)
-    
-        if region == chosen_regions[0]:  # For global services, list them only once
-            print("\nListing all S3 buckets:")
-            list_s3_buckets(session)
-
-            print("\nListing all Route 53 domains:")
-            list_route53_domains(session)
-
-            print("\nListing all CloudFront distributions:")
-            list_cloudfront_distributions(session)
-
-            print("\nListing ACM Certificates:")
-            list_acm_certificates(session)
-
-            print("\nListing ECR Repositories:")
-            list_ecr_repositories(session)
-
-            print("\nListing EKS Clusters:")
-            list_eks_clusters(session)
-
-            print("\nListing IAM Users and Roles:")
-            list_iam_users_and_roles(session)
-
-            print("\nListing Elastic IPs:")
-            list_elastic_ips(session)
-
-            print("\nListing VPCs:")
-            list_vpcs(session)
     all_data = []
-    for region in chosen_regions:
-        session = get_aws_session(access_key, secret_key, region)
 
-        # Gather data from each service
-        all_data.extend(gather_ec2_instance_data(session, region))
-        all_data.extend(gather_s3_bucket_data(session))
-        all_data.extend(gather_route53_domain_data(session))
-        all_data.extend(gather_cloudfront_distribution_data(session))
-        all_data.extend(gather_acm_certificate_data(session))
-        all_data.extend(gather_ecr_repository_data(session))
-        all_data.extend(gather_eks_cluster_data(session))
-        all_data.extend(gather_iam_user_and_role_data(session))
-        all_data.extend(gather_elastic_ip_data(session))
-        all_data.extend(gather_vpc_data(session))
+    for region in chosen_regions:
+        try:
+            session = get_aws_session(access_key, secret_key, region)
+
+            # Gather data from each service
+            all_data.extend(gather_ec2_instance_data(session, region))
+            if region == chosen_regions[0]:  # For global services, list them only once
+                all_data.extend(gather_s3_bucket_data(session))
+                all_data.extend(gather_route53_domain_data(session))
+                all_data.extend(gather_cloudfront_distribution_data(session))
+                all_data.extend(gather_acm_certificate_data(session))
+                all_data.extend(gather_ecr_repository_data(session))
+                all_data.extend(gather_eks_cluster_data(session))
+                all_data.extend(gather_iam_user_and_role_data(session))
+                all_data.extend(gather_elastic_ip_data(session))
+                all_data.extend(gather_vpc_data(session))
+
+        except botocore.exceptions.ClientError as e:
+            if e.response['Error']['Code'] == 'AuthFailure':
+                print(f"AuthFailure in region {region}: Skipping this region.")
+            else:
+                print(f"Error in region {region}: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred in region {region}: {e}")
 
     # Write data to CSV
-    if write_to_csv(all_data, "aws_resource_inventory.csv"):
+    if all_data:
+        write_to_csv(all_data, "aws_resource_inventory.csv")
         print("Data exported to aws_resource_inventory.csv")
     else:
         print("No data to export.")
+
 
 
 if __name__ == "__main__":
