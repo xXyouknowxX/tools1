@@ -143,44 +143,67 @@ def list_vpcs(session):
         print(f"Error listing VPCs: {e.response['Error']['Code']} - {e.response['Error']['Message']}")
 
 
+def get_available_regions(service):
+    """ Get available regions for a given AWS service. """
+    return boto3.Session().get_available_regions(service)
+
+def get_user_region_choice():
+    """ Prompt the user to choose regions. """
+    print("Available AWS regions are:")
+    all_regions = get_available_regions('ec2')  # Using EC2 as a reference for available regions
+    for region in all_regions:
+        print(region)
+    user_input = input("Enter a region from the list above, 'all' for all regions, or 'multiple' to specify multiple regions: ")
+    
+    if user_input.lower() == 'all':
+        return all_regions
+    elif user_input.lower() == 'multiple':
+        selected_regions = input("Enter regions separated by a comma (e.g., us-east-1,eu-west-1): ")
+        return [region.strip() for region in selected_regions.split(',')]
+    else:
+        return [user_input.strip()]
+
 def main():
     access_key = input("Enter your AWS Access Key ID: ")
     secret_key = getpass.getpass("Enter your AWS Secret Access Key: ")
-    region = input("Enter your AWS Default Region (e.g., us-west-1): ")
-
-    session = get_aws_session(access_key, secret_key, region)
-
-    regions = [region]  # or a list of regions if needed
-    for reg in regions:
-        print(f"Listing EC2 instances in {reg}:")
-        list_ec2_instances(session, reg)
     
-    print("\nListing all S3 buckets:")
-    list_s3_buckets(session)
+    # Get user's choice of regions
+    chosen_regions = get_user_region_choice()
 
-    print("\nListing all Route 53 domains:")
-    list_route53_domains(session)
+    for region in chosen_regions:
+        session = get_aws_session(access_key, secret_key, region)
 
-    print("\nListing all CloudFront distributions:")
-    list_cloudfront_distributions(session)
+        print(f"\n--- Listing resources in {region} ---")
+        print("\nListing EC2 instances:")
+        list_ec2_instances(session, region)
+    
+        if region == chosen_regions[0]:  # For global services, list them only once
+            print("\nListing all S3 buckets:")
+            list_s3_buckets(session)
 
-    print("\nListing ACM Certificates:")
-    list_acm_certificates(session)
+            print("\nListing all Route 53 domains:")
+            list_route53_domains(session)
 
-    print("\nListing ECR Repositories:")
-    list_ecr_repositories(session)
+            print("\nListing all CloudFront distributions:")
+            list_cloudfront_distributions(session)
 
-    print("\nListing EKS Clusters:")
-    list_eks_clusters(session)
+            print("\nListing ACM Certificates:")
+            list_acm_certificates(session)
 
-    print("\nListing IAM Users and Roles:")
-    list_iam_users_and_roles(session)
+            print("\nListing ECR Repositories:")
+            list_ecr_repositories(session)
 
-    print("\nListing Elastic IPs:")
-    list_elastic_ips(session)
+            print("\nListing EKS Clusters:")
+            list_eks_clusters(session)
 
-    print("\nListing VPCs:")
-    list_vpcs(session)
+            print("\nListing IAM Users and Roles:")
+            list_iam_users_and_roles(session)
+
+            print("\nListing Elastic IPs:")
+            list_elastic_ips(session)
+
+            print("\nListing VPCs:")
+            list_vpcs(session)
 
 if __name__ == "__main__":
     main()
