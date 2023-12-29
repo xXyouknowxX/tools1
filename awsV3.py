@@ -310,16 +310,58 @@ def gather_vpc_data(session):
         vpc_data.append(vpc_info)
     return vpc_data
 
+import datetime
+
 def write_to_csv(data, filename):
     if not data:
         return False
 
-    keys = data[0].keys()
     with open(filename, 'w', newline='') as output_file:
-        dict_writer = csv.DictWriter(output_file, keys)
-        dict_writer.writeheader()
-        dict_writer.writerows(data)
+        csv_writer = csv.writer(output_file)
+
+        # Service-specific headers
+        headers = {
+            "EC2 Instance": ["Resource Type", "Region", "Instance ID", "State", "Public IP", "Instance Type", "Private IP"],
+            "S3 Bucket": ["Resource Type", "Name", "Creation Date"],
+            "Route 53 Domain": ["Resource Type", "Name", "ID"],
+            "CloudFront Distribution": ["Resource Type", "ID", "Domain Name", "Status"],
+            "ACM Certificate": ["Resource Type", "ARN", "Domain Name"],
+            "ECR Repository": ["Resource Type", "Name", "URI"],
+            "EKS Cluster": ["Resource Type", "Name"],
+            "IAM User": ["Resource Type", "UserName"],
+            "IAM Role": ["Resource Type", "RoleName"],
+            "Elastic IP": ["Resource Type", "Public IP", "Allocation ID"],
+            "VPC": ["Resource Type", "VPC ID", "State"]
+            # Add more services here as needed
+        }
+
+        service = None
+        for item in data:
+            if item['Resource Type'] != service:
+                service = item['Resource Type']
+                # Separator and title for a new service
+                if output_file.tell() > 0:
+                    csv_writer.writerow([])
+                csv_writer.writerow([f"{service} Details"])
+                csv_writer.writerow(['-' * len(f"{service} Details")])
+
+                # Write headers specific to the service
+                fieldnames = headers.get(service, item.keys())
+                csv_writer.writerow(fieldnames)
+
+            # Write data rows
+            row = [format_field(item.get(field, 'N/A')) for field in fieldnames]
+            csv_writer.writerow(row)
+
     return True
+
+def format_field(value):
+    """Format fields for better readability, e.g., dates."""
+    if isinstance(value, datetime.datetime):
+        return value.strftime("%Y-%m-%d %H:%M:%S")
+    return value
+
+
 
 def main():
     access_key = input("Enter your AWS Access Key ID: ")
