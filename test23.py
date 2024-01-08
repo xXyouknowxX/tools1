@@ -1,16 +1,32 @@
 import requests
 import getpass
+import xml.etree.ElementTree as ET
+
+def fetch_option_profile_ids(username, password):
+    """Fetches option profile IDs from Qualys."""
+
+    url = 'https://qualysapi.qualys.com/api/2.0/fo/subscription/option_profile/'
+    params = {'action': 'list'}
+    auth = (username, password)
+
+    response = requests.get(url, params=params, auth=auth)
+    if response.status_code != 200:
+        raise Exception("Error fetching option profiles: " + response.text)
+
+    option_profiles = []
+    root = ET.fromstring(response.text)
+    for profile in root.findall('.//OPTION_PROFILE'):
+        profile_id = profile.find('ID').text
+        profile_name = profile.find('TITLE').text
+        option_profiles.append((profile_id, profile_name))
+
+    return option_profiles
 
 def launch_qualys_scan(username, password, scan_title, ip_addresses, option_id, iscanner_name):
     """Launch a scan in Qualys using IP addresses."""
 
-    # Endpoint URL to launch a scan
     url = 'https://qualysapi.qualys.com/api/2.0/fo/scan/'
-
-    # Headers
     headers = {'X-Requested-With': 'curl demo'}
-
-    # Data payload
     data = {
         'action': 'launch',
         'scan_title': scan_title,
@@ -19,10 +35,7 @@ def launch_qualys_scan(username, password, scan_title, ip_addresses, option_id, 
         'iscanner_name': iscanner_name
     }
 
-    # Make the POST request with HTTP Basic Authentication
     response = requests.post(url, auth=(username, password), headers=headers, data=data)
-    
-    # Check if request was successful
     if response.status_code != 200:
         raise Exception("Error in launching scan: " + response.text)
 
@@ -32,11 +45,20 @@ def main():
     username = input("Enter your Qualys username: ")
     password = getpass.getpass("Enter your Qualys password: ")
 
+    # Fetch and choose option profile ID
+    option_profiles = fetch_option_profile_ids(username, password)
+    print("Available Option Profiles:")
+    for id, name in option_profiles:
+        print(f"ID: {id}, Name: {name}")
+    
+    option_id = input("Enter the chosen Option Profile ID: ")
+
+    # Get other details for scan
     scan_title = input("Enter the scan title: ")
     ip_addresses = input("Enter IP addresses (comma-separated): ")
-    option_id = input("Enter the option ID: ")
     iscanner_name = input("Enter the scanner name: ")
 
+    # Launch the scan
     response = launch_qualys_scan(username, password, scan_title, ip_addresses, option_id, iscanner_name)
     print(response)
 
