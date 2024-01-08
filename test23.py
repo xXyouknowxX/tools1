@@ -1,46 +1,44 @@
 import requests
-import xml.etree.ElementTree as ET
-import configparser
+import getpass
 
-def fetch_option_profile_ids(config_file):
-    """Fetches option profile IDs from Qualys using GET request."""
-    
-    # Read configuration file
-    config = configparser.ConfigParser()
-    config.read(config_file)
+def launch_qualys_scan(username, password, scan_title, ip_addresses, option_id, iscanner_name):
+    """Launch a scan in Qualys using IP addresses."""
 
-    hostname = config['qualys']['hostname']
-    username = config['qualys']['username']
-    password = config['qualys']['password']
+    # Endpoint URL to launch a scan
+    url = 'https://qualysapi.qualys.com/api/2.0/fo/scan/'
 
-    # Endpoint URL to list option profiles
-    url = f'https://{hostname}/api/2.0/fo/subscription/option_profile/'
-    
-    # Parameters for the GET request
-    params = {'action': 'list'}
+    # Headers
+    headers = {'X-Requested-With': 'curl demo'}
 
-    # Make the GET request with HTTP Basic Authentication
-    response = requests.get(url, params=params, auth=(username, password))
+    # Data payload
+    data = {
+        'action': 'launch',
+        'scan_title': scan_title,
+        'ip': ip_addresses,
+        'option_id': option_id,
+        'iscanner_name': iscanner_name
+    }
+
+    # Make the POST request with HTTP Basic Authentication
+    response = requests.post(url, auth=(username, password), headers=headers, data=data)
     
     # Check if request was successful
     if response.status_code != 200:
-        raise Exception("Error fetching option profiles: " + response.text)
+        raise Exception("Error in launching scan: " + response.text)
 
-    # Parse the XML response
-    option_profiles = []
-    root = ET.fromstring(response.text)
-    for profile in root.findall('.//OPTION_PROFILE'):
-        profile_id = profile.find('ID').text
-        profile_name = profile.find('TITLE').text
-        option_profiles.append({'id': profile_id, 'name': profile_name})
-
-    return option_profiles
+    return response.text
 
 def main():
-    config_file = 'qualys_config.ini'
-    profiles = fetch_option_profile_ids(config_file)
-    for profile in profiles:
-        print(f"ID: {profile['id']}, Name: {profile['name']}")
+    username = input("Enter your Qualys username: ")
+    password = getpass.getpass("Enter your Qualys password: ")
+
+    scan_title = input("Enter the scan title: ")
+    ip_addresses = input("Enter IP addresses (comma-separated): ")
+    option_id = input("Enter the option ID: ")
+    iscanner_name = input("Enter the scanner name: ")
+
+    response = launch_qualys_scan(username, password, scan_title, ip_addresses, option_id, iscanner_name)
+    print(response)
 
 if __name__ == "__main__":
     main()
