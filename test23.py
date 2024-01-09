@@ -117,16 +117,20 @@ def main():
     
     option_id = input("Enter the chosen Option Profile ID: ")
     target_files = find_target_file()
+
     # Read targets from file
     for file_path in target_files:
-        print(f"processing file: {file_path}")
-        fqdn_targets = read_targets_from_file(file_path)
-        scan_title = get_scan_name(file_path)
-        #ip_targets_str = ','.join(ip_targets)  # Converts list of targets to a comma-separated string  
-        # iscanner_name = input("Enter the scanner name: ")
-        # Launch the scan
-        response = launch_qualys_scan(username, password, scan_title, option_id, fqdn_targets)  #ip_targets_str, fqdn_targets_str,
-        print(response)
+        print(f"Processing file: {file_path}")
+
+        # Split file if needed and read targets from each split file
+        split_files = split_file_if_needed(file_path)
+        for split_file in split_files:
+            fqdn_targets = read_targets_from_file(split_file)
+            scan_title = get_scan_name(split_file)
+
+            # Launch the scan for each split file
+            response = launch_qualys_scan(username, password, scan_title, option_id, fqdn_targets)
+            print(response)
 
 if __name__ == "__main__":
     main()
