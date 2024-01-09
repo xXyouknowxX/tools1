@@ -42,9 +42,12 @@ def launch_qualys_scan(username, password, scan_title, ip_addresses, option_id, 
     return response.text
 
 def read_targets_from_file(file_path):
-    """Reads targets from a file and returns them as a list."""
+    """Reads targets from a file and returns them as two lists: IPs and FQDNs."""
     with open(file_path, 'r') as file:
-        return [line.strip() for line in file if line.strip()]
+        lines = [line.strip() for line in file if line.strip()]
+        ip_targets = [line for line in lines if '.' in line]  # Simple check for IPs and FQDNs
+        fqdn_targets = [line for line in lines if line not in ip_targets]
+    return ip_targets, fqdn_targets
 
 def main():
     username = input("Enter your Qualys username: ")
