@@ -52,6 +52,12 @@ def split_file_if_needed(file_path, char_limit=4000):
     with open(file_path, 'r', encoding='utf-8') as file:
         lines = file.readlines()
 
+    total_size = sum(len(line) for line in lines)
+
+    # If the file is within the limit, return the original file path
+    if total_size <= char_limit:
+        return [file_path]
+
     current_size = 0
     current_part = []
     parts = []
@@ -78,6 +84,7 @@ def split_file_if_needed(file_path, char_limit=4000):
         split_file_paths.append(part_file_path)
 
     return split_file_paths
+
 def read_targets_from_file(file_path):
     """Reads IP addresses and FQDNs from a file, identifying each."""
     ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
