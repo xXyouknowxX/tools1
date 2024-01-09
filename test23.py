@@ -86,19 +86,19 @@ def split_file_if_needed(file_path, char_limit=4000):
     return split_file_paths
 
 def read_targets_from_file(file_path):
-    """Reads IP addresses and FQDNs from a file, identifying each."""
+    """Reads IP addresses and FQDNs from a file or files, identifying each."""
     ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
     fqdn_pattern = r'\b(?:[a-zA-Z\d-]{,63}\.)+[a-zA-Z]{2,63}\b'
-    all_ips, all_fqdns = [], []
-    for file_path in split_file_if_needed(file_path):
-        with open(file_path, 'r') as file:
+    
+    all_fqdns = []
+    for split_file_path in split_file_if_needed(file_path):
+        with open(split_file_path, 'r') as file:
             lines = file.read().splitlines()        
-            ips = [line for line in lines if re.fullmatch(ip_pattern, line)]
             fqdns = [line for line in lines if re.fullmatch(fqdn_pattern, line)]
-            # all_fqdns.extend(fqdns)
+            all_fqdns.extend(fqdns)
 
-        return ','.join(fqdns)
-    #return all_fqdns
+    return ','.join(all_fqdns)
+
 
 def get_scan_name(file_path):
     base_name = os.path.basename(file_path)
