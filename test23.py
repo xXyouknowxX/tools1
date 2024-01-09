@@ -41,6 +41,11 @@ def launch_qualys_scan(username, password, scan_title, ip_addresses, option_id, 
 
     return response.text
 
+def read_targets_from_file(file_path):
+    """Reads targets from a file and returns them as a list."""
+    with open(file_path, 'r') as file:
+        return [line.strip() for line in file if line.strip()]
+
 def main():
     username = input("Enter your Qualys username: ")
     password = getpass.getpass("Enter your Qualys password: ")
@@ -53,9 +58,12 @@ def main():
     
     option_id = input("Enter the chosen Option Profile ID: ")
 
-    # Get other details for scan
+    # Read targets from file
+    file_path = input("Enter the file path for the targets: ")
+    targets = read_targets_from_file(file_path)
+    ip_addresses = ','.join(targets)  # Converts list of targets to a comma-separated string
+
     scan_title = input("Enter the scan title: ")
-    ip_addresses = input("Enter IP addresses (comma-separated): ")
     iscanner_name = input("Enter the scanner name: ")
 
     # Launch the scan
