@@ -1,9 +1,7 @@
 import requests
 from requests.auth import HTTPBasicAuth
 
-
 def get_asset_id(username, password, ip_address):
-    # Define the URL to fetch asset information
     url = 'https://qualysapi.qg4.apps.qualys.com/api/2.0/fo/asset/host/'  # Update with the correct API endpoint
     params = {
         'action': 'list',
@@ -13,13 +11,13 @@ def get_asset_id(username, password, ip_address):
     response = requests.get(url, params=params, auth=HTTPBasicAuth(username, password))
     if response.status_code == 200:
         data = response.json()
-        # Extract and return the asset ID from the response
-        # Note: Update the JSON path according to the actual structure of the response
-        return data['RESPONSE']['ASSET_LIST']['ASSET']['ID']
+        # Update the JSON path according to the actual structure of the response
+        # Example: return data['RESPONSE']['ASSET_LIST'][0]['ID']
+        return data['RESPONSE']['ASSET_LIST']['ASSET']['ID']  # Adjust this line
     else:
         return None
 
-def update_qualys_asset_by_ip(username, password, asset_ip, custom_attributes):
+def update_qualys_asset(username, password, asset_id, custom_attributes):
     url = 'https://qualysapi.qg4.apps.qualys.com/qps/rest/2.0/update/am/asset'
     headers = {
         'Content-Type': 'application/json',
@@ -30,9 +28,9 @@ def update_qualys_asset_by_ip(username, password, asset_ip, custom_attributes):
             "filters": {
                 "Criteria": [
                     {
-                        "field": "ip",  # Assuming 'ip' is the correct field name
+                        "field": "id",  # Use 'id' since we have the asset ID
                         "operator": "EQUALS",
-                        "value": asset_ip
+                        "value": asset_id
                     }
                 ]
             },
@@ -53,11 +51,18 @@ def update_qualys_asset_by_ip(username, password, asset_ip, custom_attributes):
 # Example usage
 username = 'your_username'
 password = 'your_password!'
-asset_ip = '192.168.1.1'  # Replace with the actual IP address of the asset
 custom_attributes = [
     {"key": "MyFirstCustomAttribute", "value": "QualysFunTeam"},
     {"key": "MyAssetProcurementID", "value": "QLYS 123456"}
 ]
 
-response = update_qualys_asset_by_ip(username, password, asset_ip, custom_attributes)
-print(response)
+# Read IP addresses from a file
+with open('ip_addresses.txt', 'r') as file:
+    for ip_address in file:
+        ip_address = ip_address.strip()
+        asset_id = get_asset_id(username, password, ip_address)
+        if asset_id:
+            response = update_qualys_asset(username, password, asset_id, custom_attributes)
+            print(f'Updated asset {asset_id} with response: {response}')
+        else:
+            print(f'No asset found for IP address {ip_address}')
