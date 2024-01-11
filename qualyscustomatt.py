@@ -3,7 +3,7 @@ from requests.auth import HTTPBasicAuth
 import xml.etree.ElementTree as ET
 
 def get_asset_id(username, password, ip_address):
-    url = 'https://qualysapi.qg4.apps.qualys.com/api/2.0/fo/asset/host/'  # Correct API endpoint
+    url = 'https://qualysapi.qg4.apps.qualys.com/api/2.0/fo/asset/host/'
     params = {
         'action': 'list',
         'ips': ip_address,
@@ -12,13 +12,18 @@ def get_asset_id(username, password, ip_address):
     response = requests.get(url, params=params, auth=HTTPBasicAuth(username, password))
     
     if response.status_code == 200:
-        root = ET.fromstring(response.content)
-        # Loop through each HOST element and extract ASSET_ID
-        for host in root.findall('.//HOST'):
-            asset_id = host.find('ASSET_ID').text
-            return asset_id  # Return the first found ASSET_ID
+        try:
+            root = ET.fromstring(response.content)
+            for host in root.findall('.//HOST'):
+                asset_id = host.find('ASSET_ID')
+                if asset_id is not None:
+                    return asset_id.text
+        except ET.ParseError as e:
+            print("Error parsing the XML response:", e)
     else:
-        return None
+        print(f"API request failed with status code {response.status_code}")
+
+    return None
 
 def update_qualys_asset(username, password, asset_id, custom_attributes):
     url = 'https://qualysapi.qg4.apps.qualys.com/qps/rest/2.0/update/am/asset'
