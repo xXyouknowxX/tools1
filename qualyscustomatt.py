@@ -1,19 +1,22 @@
 import requests
 from requests.auth import HTTPBasicAuth
+import xml.etree.ElementTree as ET
 
 def get_asset_id(username, password, ip_address):
-    url = 'https://qualysapi.qg4.apps.qualys.com/api/2.0/fo/asset/host/'  # Update with the correct API endpoint
+    url = 'https://qualysapi.qg4.apps.qualys.com/api/2.0/fo/asset/host/'  # Correct API endpoint
     params = {
         'action': 'list',
         'ips': ip_address,
         'details': 'Basic'
     }
     response = requests.get(url, params=params, auth=HTTPBasicAuth(username, password))
+    
     if response.status_code == 200:
-        data = response.json()
-        # Update the JSON path according to the actual structure of the response
-        # Example: return data['RESPONSE']['ASSET_LIST'][0]['ID']
-        return data['RESPONSE']['ASSET_LIST']['ASSET']['ID']  # Adjust this line
+        root = ET.fromstring(response.content)
+        # Loop through each HOST element and extract ASSET_ID
+        for host in root.findall('.//HOST'):
+            asset_id = host.find('ASSET_ID').text
+            return asset_id  # Return the first found ASSET_ID
     else:
         return None
 
