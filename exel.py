@@ -9,16 +9,16 @@ def process_csv(input_file, output_file):
             for index, row in enumerate(reader):
                 try:
                     if len(row) < 4:
-                        continue  # Skip rows with insufficient columns
+                        print(f"Skipping row {index + 1}: insufficient columns")
+                        continue
 
                     col1, col2, col3, col4 = row[0], row[1], row[2], row[3]
 
-                    # Skip rows where col3 contains non-numeric characters (like 'cloudprov')
-                    if any(char.isalpha() for char in col3):
-                        continue
+                    # Log the values for debugging
+                    print(f"Processing row {index + 1}: {col1}, {col2}, {col3}, {col4}")
 
-                    if col2 == col3:  # Check if columns 2 and 3 have the same values
-                        processed_data.append([col1, col2, col3, col4])  # Keep cols 1, 2, 3, and 4
+                    if col2 == col3:
+                        processed_data.append([col1, col2, col3, col4])
                 except Exception as e:
                     print(f"Error processing row {index + 1}: {e}")
 
@@ -31,4 +31,4 @@ def process_csv(input_file, output_file):
         print(f"An error occurred while reading the file: {e}")
 
 # Example usage
-process_csv('your_input_file.csv', 'your_output_file.csv')  # Replace with your actual file names
+process_csv('your_input_file.csv', 'your_output_file.csv')
