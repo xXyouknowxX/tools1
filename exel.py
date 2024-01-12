@@ -4,20 +4,22 @@ def process_csv(input_file, output_file):
     try:
         with open(input_file, 'r', newline='', encoding='utf-8') as infile:
             reader = csv.reader(infile)
+            rows = list(reader)
             processed_data = []
 
-            for index, row in enumerate(reader):
+            # Iterate through each row
+            for row in rows:
                 if len(row) < 4:
-                    print(f"Skipping row {index + 1}: Insufficient columns")
-                    continue
+                    continue  # Skip if the row doesn't have enough columns
 
-                # Strip whitespace and lower the case for accurate comparison
-                col1, col2, col3, col4 = row[0].strip(), row[1].strip().lower(), row[2].strip().lower(), row[3].strip()
+                col1, col2 = row[0].strip(), row[1].strip().lower()
 
-                # Compare values in columns 2 and 3
-                if col2 == col3:
-                    # If they match, append the row data to processed_data
-                    processed_data.append([col1, col2, col3, col4])
+                # Search for matches in column 3 of all rows
+                for target_row in rows:
+                    col3, col4 = target_row[2].strip().lower(), target_row[3].strip()
+                    if col2 == col3:
+                        # If a match is found, append the data to processed_data
+                        processed_data.append([col1, col2, col3, col4])
 
         # Check if any data was processed
         if processed_data:
