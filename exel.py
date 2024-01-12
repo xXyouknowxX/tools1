@@ -1,5 +1,4 @@
-import pandas as pd
-import ipaddress
+import csv
 
 def is_valid_ip(ip):
     try:
@@ -8,29 +7,29 @@ def is_valid_ip(ip):
     except ValueError:
         return False
 
-def process_csv(file_name, output_file_name):
+def process_csv(input_file, output_file):
     try:
-        # Load the CSV file
-        df = pd.read_csv(file_name, header=None)
+        with open(input_file, 'r', newline='', encoding='utf-8') as infile:
+            reader = csv.reader(infile)
+            processed_data = []
 
-        # Filter out rows where column 3 is not a valid IP address
-        df = df[df[2].apply(lambda x: isinstance(x, str) and is_valid_ip(x))]
+            for row in reader:
+                if len(row) < 4:
+                    continue  # Skip rows that don't have enough columns
 
-        # Find duplicates in columns 2-3
-        duplicates = df.duplicated(subset=[1, 2], keep=False)
+                # Assuming columns are 0-indexed in description
+                col2, col3 = row[1], row[2]
+                if is_valid_ip(col3) and col2 == col3:  # Check if col3 is a valid IP and col2 equals col3
+                    processed_data.append([row[0], col2, col3, row[3]])  # Keep cols 1, 2, 3, and 4
 
-        # Filter the DataFrame to only include these duplicates
-        filtered_df = df[duplicates]
-
-        # Optional: Sort by columns 2 and 3 for better readability
-        sorted_df = filtered_df.sort_values(by=[1, 2])
-
-        # Save the processed data to a new CSV file
-        sorted_df.to_csv(output_file_name, index=False, header=False)
-        print(f"Processed file saved as {output_file_name}")
+        # Writing processed data to output file
+        with open(output_file, 'w', newline='', encoding='utf-8') as outfile:
+            writer = csv.writer(outfile)
+            writer.writerows(processed_data)
+            print(f"Processed data saved to {output_file}")
 
     except Exception as e:
         print(f"An error occurred: {e}")
 
 # Example usage
-process_csv('your_file.csv', 'processed_file.csv')  # Replace with your file names
+process_csv('your_input_file.csv', 'your_output_file.csv')  # Replace with your actual file names
