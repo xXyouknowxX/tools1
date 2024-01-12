@@ -1,17 +1,24 @@
 import pandas as pd
+import ipaddress
+
+def is_valid_ip(ip):
+    try:
+        ipaddress.ip_address(ip)
+        return True
+    except ValueError:
+        return False
 
 # Load the CSV file
 df = pd.read_csv('your_file.csv', header=None)  # Replace 'your_file.csv' with your file name
 
-# Assuming columns are numbered from 1 in your description, 
-# but pandas uses 0-indexing (so we adjust to 0-1 for cols 1-2 and 2-3)
-locked_columns = df.iloc[:, [0, 1, 2, 3]]  
+# Filter out rows where column 3 is not a valid IP address
+df = df[df[2].apply(lambda x: is_valid_ip(x))]
 
 # Find duplicates in columns 2-3
-duplicates = locked_columns.duplicated(subset=[1, 2], keep=False)
+duplicates = df.duplicated(subset=[1, 2], keep=False)
 
 # Filter the DataFrame to only include these duplicates
-filtered_df = locked_columns[duplicates]
+filtered_df = df[duplicates]
 
 # Optional: Sort by columns 2 and 3 for better readability
 sorted_df = filtered_df.sort_values(by=[1, 2])
