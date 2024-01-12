@@ -11,22 +11,25 @@ def process_csv(input_file, output_file):
                     print(f"Skipping row {index + 1}: Insufficient columns")
                     continue
 
-                # Pair up values from columns 1-2 and 3-4
-                pair1 = (row[0], row[1])  # Pair from columns 1 and 2
-                pair2 = (row[2], row[3])  # Pair from columns 3 and 4
+                # Strip whitespace and lower the case for accurate comparison
+                col1, col2, col3, col4 = row[0].strip(), row[1].strip().lower(), row[2].strip().lower(), row[3].strip()
 
-                # Compare the second elements of each pair (columns 2 and 3)
-                if pair1[1].strip() == pair2[0].strip():
-                    # If they match, append both pairs side by side
-                    processed_data.append(pair1 + pair2)
+                # Compare values in columns 2 and 3
+                if col2 == col3:
+                    # If they match, append the row data to processed_data
+                    processed_data.append([col1, col2, col3, col4])
 
-        with open(output_file, 'w', newline='', encoding='utf-8') as outfile:
-            writer = csv.writer(outfile)
-            writer.writerows(processed_data)
-            print(f"Processed data saved to {output_file}")
+        # Check if any data was processed
+        if processed_data:
+            with open(output_file, 'w', newline='', encoding='utf-8') as outfile:
+                writer = csv.writer(outfile)
+                writer.writerows(processed_data)
+                print(f"Processed data saved to {output_file}")
+        else:
+            print("No matching data found. Output file will be empty.")
 
     except Exception as e:
         print(f"An error occurred: {e}")
 
 # Example usage
-process_csv('your_input_file.csv', 'your_output_file.csv')
+process_csv('your_input_file.csv', 'your_output_file.csv')  # Replace with your actual file names
