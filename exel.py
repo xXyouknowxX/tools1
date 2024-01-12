@@ -7,36 +7,26 @@ def process_csv(input_file, output_file):
             processed_data = []
 
             for index, row in enumerate(reader):
-                try:
-                    if len(row) < 4:
-                        print(f"Skipping row {index + 1}: Insufficient columns")
-                        continue
+                if len(row) < 4:
+                    print(f"Skipping row {index + 1}: Insufficient columns")
+                    continue
 
-                    col1, col2, col3, col4 = row[0], row[1], row[2], row[3]
+                # Pair up values from columns 1-2 and 3-4
+                pair1 = (row[0], row[1])  # Pair from columns 1 and 2
+                pair2 = (row[2], row[3])  # Pair from columns 3 and 4
 
-                    # Log the values for debugging
-                    print(f"Row {index + 1} data: {col1}, {col2}, {col3}, {col4}")
+                # Compare the second elements of each pair (columns 2 and 3)
+                if pair1[1].strip() == pair2[0].strip():
+                    # If they match, append both pairs side by side
+                    processed_data.append(pair1 + pair2)
 
-                    # Check if columns 2 and 3 have the same values
-                    if col2 == col3:
-                        processed_data.append([col1, col2, col3, col4])
-                        print(f"Added row {index + 1} to processed data")
-                    else:
-                        print(f"Skipping row {index + 1}: Column 2 and 3 values are not the same")
-                except Exception as e:
-                    print(f"Error processing row {index + 1}: {e}")
-
-        # Check if any data is processed
-        if processed_data:
-            with open(output_file, 'w', newline='', encoding='utf-8') as outfile:
-                writer = csv.writer(outfile)
-                writer.writerows(processed_data)
-                print(f"Processed data saved to {output_file}")
-        else:
-            print("No data was processed. Output file will be empty.")
+        with open(output_file, 'w', newline='', encoding='utf-8') as outfile:
+            writer = csv.writer(outfile)
+            writer.writerows(processed_data)
+            print(f"Processed data saved to {output_file}")
 
     except Exception as e:
-        print(f"An error occurred while reading the file: {e}")
+        print(f"An error occurred: {e}")
 
 # Example usage
 process_csv('your_input_file.csv', 'your_output_file.csv')
