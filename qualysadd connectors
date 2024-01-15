@@ -1,0 +1,32 @@
+import csv
+import requests
+from requests.auth import HTTPBasicAuth
+
+def add_qualys_connector(username, password, app_id, auth_key, sub_id):
+    url = 'https://qualysapi.your_qualys_domain.com/api/connector_endpoint'  # Replace with the correct API endpoint
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
+    data = {
+        "data": {
+            "applicationId": app_id,
+            "authKey": auth_key,
+            "subscriptionId": sub_id
+        }
+    }
+    response = requests.post(url, json=data, headers=headers, auth=HTTPBasicAuth(username, password))
+    return response.json()
+
+# Example usage
+username = 'your_qualys_username'  # Replace with your Qualys username
+password = 'your_qualys_password'  # Replace with your Qualys password
+
+# Read Application ID, Auth Key, and Subscription ID from the CSV file
+with open('qualys_connector_details.csv', newline='') as csvfile:
+    csvreader = csv.reader(csvfile)
+    for row in csvreader:
+        app_id, auth_key, sub_id = row
+        response = add_qualys_connector(username, password, app_id, auth_key, sub_id)
+        print(f'Response for App ID {app_id}: {response}')
+
