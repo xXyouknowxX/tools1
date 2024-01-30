@@ -1,40 +1,44 @@
 import pandas as pd
 import plotly.graph_objs as go
-from plotly.subplots import make_subplots
-from datetime import datetime
+from dash import Dash, dcc, html, Input, Output
 
-# Read the CSV file
-df = pd.read_csv('qualys_scan_report.csv')
+# Sample CSV data
+data = pd.DataFrame({
+    'Category': ['A', 'A', 'B', 'B', 'C', 'C'],
+    'Value': [1, 2, 3, 4, 5, 6]
+})
 
-# Extract relevant columns
-hosts = df['Host'].unique()
-vulnerabilities_per_host = df.groupby('Host')['Vulnerability'].count()
+# Initialize Dash app
+app = Dash(__name__)
 
-# Truncate long host names
-max_length = 10  # Define maximum length for truncated names
-truncated_hosts = [host[:max_length] + '...' if len(host) > max_length else host for host in hosts]
+# Define layout
+app.layout = html.Div([
+    dcc.Dropdown(
+        id='category-dropdown',
+        options=[
+            {'label': 'A', 'value': 'A'},
+            {'label': 'B', 'value': 'B'},
+            {'label': 'C', 'value': 'C'}
+        ],
+        value='A'
+    ),
+    html.Br(),
+    html.Div(id='data-table-container')
+])
 
-# Generate artificial months for the average criticality score
-# Assuming the data spans over multiple months
-start_date = df['Date'].min()
-end_date = df['Date'].max()
-all_months = pd.date_range(start=start_date, end=end_date, freq='MS').strftime("%B %Y").tolist()
+# Define callback to update data table
+@app.callback(
+    Output('data-table-container', 'children'),
+    [Input('category-dropdown', 'value')]
+)
+def update_data_table(selected_category):
+    filtered_data = data[data['Category'] == selected_category]
+    table = html.Table([
+        html.Tr([html.Th(col) for col in filtered_data.columns]),
+        *[html.Tr([html.Td(filtered_data.iloc[i][col]) for col in filtered_data.columns]) for i in range(len(filtered_data))]
+    ])
+    return table
 
-# Calculate average criticality score per host for each month
-average_criticality_score_by_month = df.groupby(['Host', pd.Grouper(key='Date', freq='MS')])['Criticality'].mean().unstack(fill_value=0)
-
-# Create Plotly dashboard
-fig = make_subplots(rows=1, cols=2, subplot_titles=("Number of Vulnerabilities per Host", "Average Criticality Score per Host"))
-
-# Add bar chart for number of vulnerabilities per host
-fig.add_trace(go.Bar(x=truncated_hosts, y=vulnerabilities_per_host, name='Vulnerabilities'), row=1, col=1)
-
-# Add line chart for average criticality score per host over months
-for host in hosts:
-    fig.add_trace(go.Scatter(x=all_months, y=average_criticality_score_by_month.loc[host], mode='lines', name=host), row=1, col=2)
-
-# Update layout
-fig.update_layout(title_text="Qualys Scan Report Dashboard")
-
-# Show dashboard
-fig.show()
+# Run the app
+if __name__ == '__main__':
+    app.run_server(debug=True)
