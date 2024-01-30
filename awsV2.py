@@ -1,65 +1,40 @@
-import boto3
-import getpass
+import pandas as pd
+import plotly.graph_objs as go
+from plotly.subplots import make_subplots
+from datetime import datetime
 
-def get_aws_session(access_key, secret_key, region):
-    return boto3.Session(
-        aws_access_key_id=access_key,
-        aws_secret_access_key=secret_key,
-        region_name=region
-    )
+# Read the CSV file
+df = pd.read_csv('qualys_scan_report.csv')
 
-def list_ec2_instances(session, region):
-    ec2 = session.client('ec2', region_name=region)
-    instances = ec2.describe_instances()
-    for reservation in instances['Reservations']:
-        for instance in reservation['Instances']:
-            print(f"Instance ID: {instance['InstanceId']}")
-            print(f"Instance Type: {instance['InstanceType']}")
-            print(f"Launch Time: {instance['LaunchTime']}")
-            print(f"Public DNS: {instance.get('PublicDnsName', 'N/A')}")
-            # Add more fields as needed
-            print("-------------------------------------------------")
+# Extract relevant columns
+hosts = df['Host'].unique()
+vulnerabilities_per_host = df.groupby('Host')['Vulnerability'].count()
 
-def list_s3_buckets(session):
-    s3 = session.client('s3')
-    response = s3.list_buckets()
-    for bucket in response['Buckets']:
-        print(f"Bucket Name: {bucket['Name']}")
-        print(f"Creation Date: {bucket['CreationDate']}")
-        location = s3.get_bucket_location(Bucket=bucket['Name'])['LocationConstraint']
-        print(f"Bucket Location: {location or 'us-east-1'}")
-        # Add more fields as needed
-        print("-------------------------------------------------")
+# Truncate long host names
+max_length = 10  # Define maximum length for truncated names
+truncated_hosts = [host[:max_length] + '...' if len(host) > max_length else host for host in hosts]
 
-def list_route53_domains(session):
-    route53 = session.client('route53')
-    response = route53.list_hosted_zones()
-    for zone in response['HostedZones']:
-        print(f"Domain Name: {zone['Name']}")
-        print(f"Zone ID: {zone['Id']}")
-        records = route53.list_resource_record_sets(HostedZoneId=zone['Id'])
-        for record in records['ResourceRecordSets']:
-            print(f"Record Name: {record['Name']} - Type: {record['Type']}")
-        # Add more fields as needed
-        print("-------------------------------------------------")
+# Generate artificial months for the average criticality score
+# Assuming the data spans over multiple months
+start_date = df['Date'].min()
+end_date = df['Date'].max()
+all_months = pd.date_range(start=start_date, end=end_date, freq='MS').strftime("%B %Y").tolist()
 
-def main():
-    access_key = input("Enter your AWS Access Key ID: ")
-    secret_key = getpass.getpass("Enter your AWS Secret Access Key: ")
-    region = input("Enter your AWS Default Region (e.g., us-west-1): ")
+# Calculate average criticality score per host for each month
+average_criticality_score_by_month = df.groupby(['Host', pd.Grouper(key='Date', freq='MS')])['Criticality'].mean().unstack(fill_value=0)
 
-    session = get_aws_session(access_key, secret_key, region)
+# Create Plotly dashboard
+fig = make_subplots(rows=1, cols=2, subplot_titles=("Number of Vulnerabilities per Host", "Average Criticality Score per Host"))
 
-    regions = [region]  # or a list of regions if needed
-    for reg in regions:
-        print(f"Listing EC2 instances in {reg}:")
-        list_ec2_instances(session, reg)
-    
-    print("\nListing all S3 buckets:")
-    list_s3_buckets(session)
+# Add bar chart for number of vulnerabilities per host
+fig.add_trace(go.Bar(x=truncated_hosts, y=vulnerabilities_per_host, name='Vulnerabilities'), row=1, col=1)
 
-    print("\nListing all Route 53 domains:")
-    list_route53_domains(session)
+# Add line chart for average criticality score per host over months
+for host in hosts:
+    fig.add_trace(go.Scatter(x=all_months, y=average_criticality_score_by_month.loc[host], mode='lines', name=host), row=1, col=2)
 
-if __name__ == "__main__":
-    main()
+# Update layout
+fig.update_layout(title_text="Qualys Scan Report Dashboard")
+
+# Show dashboard
+fig.show()
