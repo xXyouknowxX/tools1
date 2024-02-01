@@ -59,19 +59,17 @@ def update_content(selected_ip):
 
     # Update graphs
     hist_fig = px.histogram(filtered_data, x='IP', y='Severity', histfunc='avg')
-    scatter_fig = px.scatter(filtered_data, x='IP', y='Title', color='Severity')
     
-    # Apply text wrapping to y-axis labels and set hover data
+    # 'Severity and Titles by IP' scatter plot
+    scatter_fig = px.scatter(filtered_data, x='IP', y='Title', color='Severity')
     scatter_fig.update_layout(
         height=600,  # Adjust the height of the graph if necessary
-        hovermode='closest'
+        hovermode='closest',
+        yaxis={'tickmode': 'array', 'tickvals': filtered_data['Title'], 'ticktext': [wrap_text(title) for title in filtered_data['Title']]}
     )
     scatter_fig.update_traces(
-        hovertemplate='<b>%{y}</b>',  # Show full title in tooltip on hover
-        text=[wrap_text(title) for title in filtered_data['Title']],
-        mode='markers+text'
+        hovertemplate='<b>%{y}</b>'  # Show full title in tooltip on hover
     )
-    scatter_fig.update_yaxes(tickmode='array', tickvals=filtered_data['Title'], ticktext=[wrap_text(title) for title in filtered_data['Title']])
     
     line_fig = px.line(filtered_data, x='IP', y='Severity')
     evolution_fig = px.line(dx, x="Session", y=dx.columns)
