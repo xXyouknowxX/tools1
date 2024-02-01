@@ -53,12 +53,23 @@ def update_content(selected_ip):
         # Update graphs
         hist_fig = px.histogram(filtered_data, x='IP', y='Severity', histfunc='avg')
         scatter_fig = px.scatter(filtered_data, x='IP', y='Title', color='Severity')
-        line_fig = px.line(filtered_data, x='IP', y='Severity')
-        evolution_fig = px.line(dx, x="Session", y=dx.columns)
+        # Wrap the labels and set hover data
+        scatter_fig.update_layout(
+            height=600,  # Adjust the height of the graph if necessary
+            hovermode='closest'
+        )
+        scatter_fig.update_traces(
+            hovertemplate='<b>%{y}</b>',  # Show full title in tooltip on hover
+            text=[f'{title[:50]}...' if len(title) > 50 else title for title in filtered_data['Title']],
+            mode='markers+text'
+        )
+        scatter_fig.update_yaxes(tickmode='array', tickvals=filtered_data['Title'], ticktext=[f'{title[:50]}...' if len(title) > 50 else title for title in filtered_data['Title']])
+            
+            line_fig = px.line(filtered_data, x='IP', y='Severity')
+            evolution_fig = px.line(dx, x="Session", y=dx.columns)
 
         return table, hist_fig, scatter_fig, evolution_fig, line_fig
-    else:
-        return html.Div("No data available."), {}, {}, {}, {}
+
 
 # Run the app
 if __name__ == '__main__':
