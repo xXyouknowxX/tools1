@@ -18,7 +18,7 @@ app.layout = html.Div([
     dcc.Dropdown(
         id='category-dropdown',
         options=[{'label': IP, 'value': IP} for IP in IPs],
-        value=IPs[0] if len(IPs) > 0 else None
+        value=None  # No default selection
     ),
     html.Br(),
     html.Div(id='data-table-container'),
@@ -46,10 +46,7 @@ def wrap_text(text, length=50):
     [Input('category-dropdown', 'value')]
 )
 def update_content(selected_ip):
-    if selected_ip:
-        filtered_data = data[data['IP'] == selected_ip]
-    else:
-        filtered_data = data
+    filtered_data = data[data['IP'] == selected_ip] if selected_ip else data
 
     table = dash_table.DataTable(
         data=filtered_data.to_dict('records'),
@@ -64,12 +61,12 @@ def update_content(selected_ip):
     scatter_fig = px.scatter(filtered_data, x='IP', y='Title', color='Severity')
     scatter_fig.update_layout(
         height=600,  # Adjust the height of the graph if necessary
-        hovermode='closest',
-        yaxis={'tickmode': 'array', 'tickvals': filtered_data['Title'], 'ticktext': [wrap_text(title) for title in filtered_data['Title']]}
+        hovermode='closest'
     )
     scatter_fig.update_traces(
         hovertemplate='<b>%{y}</b>'  # Show full title in tooltip on hover
     )
+    scatter_fig.update_yaxes(tickmode='array', tickvals=filtered_data['Title'], ticktext=[wrap_text(title) for title in filtered_data['Title']])
     
     line_fig = px.line(filtered_data, x='IP', y='Severity')
     evolution_fig = px.line(dx, x="Session", y=dx.columns)
