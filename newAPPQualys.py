@@ -32,6 +32,10 @@ app.layout = html.Div([
     dcc.Graph(id='severity-line'),
 ])
 
+# Function to wrap text
+def wrap_text(text, length=50):
+    return text if len(text) <= length else text[:length] + '...'
+
 # Define callback to update data table and graphs
 @app.callback(
     Output('data-table-container', 'children'),
@@ -44,32 +48,35 @@ app.layout = html.Div([
 def update_content(selected_ip):
     if selected_ip:
         filtered_data = data[data['IP'] == selected_ip]
-        table = dash_table.DataTable(
-            data=filtered_data.to_dict('records'),
-            columns=[{"name": i, "id": i} for i in filtered_data.columns],
-            page_size=10
-        )
+    else:
+        filtered_data = data
 
-        # Update graphs
-        hist_fig = px.histogram(filtered_data, x='IP', y='Severity', histfunc='avg')
-        scatter_fig = px.scatter(filtered_data, x='IP', y='Title', color='Severity')
-        # Wrap the labels and set hover data
-        scatter_fig.update_layout(
-            height=600,  # Adjust the height of the graph if necessary
-            hovermode='closest'
-        )
-        scatter_fig.update_traces(
-            hovertemplate='<b>%{y}</b>',  # Show full title in tooltip on hover
-            text=[f'{title[:50]}...' if len(title) > 50 else title for title in filtered_data['Title']],
-            mode='markers+text'
-        )
-        scatter_fig.update_yaxes(tickmode='array', tickvals=filtered_data['Title'], ticktext=[f'{title[:50]}...' if len(title) > 50 else title for title in filtered_data['Title']])
-            
-            line_fig = px.line(filtered_data, x='IP', y='Severity')
-            evolution_fig = px.line(dx, x="Session", y=dx.columns)
+    table = dash_table.DataTable(
+        data=filtered_data.to_dict('records'),
+        columns=[{"name": i, "id": i} for i in filtered_data.columns],
+        page_size=10
+    )
 
-        return table, hist_fig, scatter_fig, evolution_fig, line_fig
+    # Update graphs
+    hist_fig = px.histogram(filtered_data, x='IP', y='Severity', histfunc='avg')
+    scatter_fig = px.scatter(filtered_data, x='IP', y='Title', color='Severity')
+    
+    # Apply text wrapping to y-axis labels and set hover data
+    scatter_fig.update_layout(
+        height=600,  # Adjust the height of the graph if necessary
+        hovermode='closest'
+    )
+    scatter_fig.update_traces(
+        hovertemplate='<b>%{y}</b>',  # Show full title in tooltip on hover
+        text=[wrap_text(title) for title in filtered_data['Title']],
+        mode='markers+text'
+    )
+    scatter_fig.update_yaxes(tickmode='array', tickvals=filtered_data['Title'], ticktext=[wrap_text(title) for title in filtered_data['Title']])
+    
+    line_fig = px.line(filtered_data, x='IP', y='Severity')
+    evolution_fig = px.line(dx, x="Session", y=dx.columns)
 
+    return table, hist_fig, scatter_fig, evolution_fig, line_fig
 
 # Run the app
 if __name__ == '__main__':
