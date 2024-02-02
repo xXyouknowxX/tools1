@@ -71,14 +71,28 @@ def update_dashboard(selected_ip, selected_severity):
                             category_orders={"Severity": ["Critical", "High", "Medium", "Low"]},
                             color_discrete_map=severity_to_color())
 
-    # Severity Scatter Plot
-    scatter_fig = px.scatter(filtered_data, x='Severity', y='Title', color='Severity', title="Severity by Title")
+    # Before plotting, wrap the 'Title' text for readability
+    filtered_data['WrappedTitle'] = filtered_data['Title'].apply(lambda x: wrap_text(x, width=15))
+
+    # Then use 'WrappedTitle' for the y-axis labels in your scatter plot
+    scatter_fig = px.scatter(filtered_data, x='Severity', y='WrappedTitle', color='Severity', title="Severity by Title")
+    scatter_fig.update_layout(xaxis_tickangle=-45)  # Optionally rotate x-axis labels for better readability
+
     
     # Example 3D Scatter Plot
-    scatter_3d_fig = px.scatter_3d(filtered_data, x='IP', y='Title', z='Severity',
-                                   color='Severity', title="3D View: IP, Severity, and Title")
+    # Use 'WrappedTitle' for hover text in your 3D scatter plot for better readability
+    scatter_3d_fig = px.scatter_3d(filtered_data, x='IP', y='Severity', z='Risk Score' if 'Risk Score' in filtered_data.columns else 'Title',
+                               color='Severity', title="3D View: IP, Severity, and Title",
+                               hover_name='WrappedTitle')
 
     return summary_stats, hist_fig, scatter_fig, scatter_3d_fig, filtered_data.to_dict('records')
+
+def wrap_text(text, width=10):
+    """Wrap text with a given width."""
+    if len(text) <= width:
+        return text
+    return '<br>'.join(text[i:i+width] for i in range(0, len(text), width))
+
 
 def severity_to_color():
     """Function to provide a color map for severity levels."""
