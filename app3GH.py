@@ -1,11 +1,14 @@
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go  # Import required for using go.Figure
 from dash import Dash, dcc, html, Input, Output, dash_table
 from dash.exceptions import PreventUpdate
 
 # Load your CSV data
 data = pd.read_csv('completeee.csv')
-data['Date'] = pd.to_datetime(data['Date'], errors='coerce')  # Ensure 'Date' is datetime format
+
+# Assuming your CSV doesn't actually have a 'Date' column, so we'll skip this part
+# If you have other columns like 'Risk Score', ensure they're formatted correctly
 
 # Initialize Dash app
 app = Dash(__name__)
@@ -28,8 +31,8 @@ app.layout = html.Div([
     html.Div(id='summary-stats', style={'margin': '20px'}),
     dcc.Graph(id='severity-histogram', style={'margin': '20px'}),
     dcc.Graph(id='severity-scatter', style={'margin': '20px'}),
-    dcc.Graph(id='vulnerabilities-evolution', style={'margin': '20px'}),
-    dcc.Graph(id='severity-line', style={'margin': '20px'}),
+    dcc.Graph(id='vulnerabilities-evolution', style={'margin': '20px'}),  # Placeholder for future implementation
+    dcc.Graph(id='severity-line', style={'margin': '20px'}),  # Placeholder for future implementation
     dash_table.DataTable(
         id='vulnerability-table',
         columns=[{"name": i, "id": i} for i in data.columns],
@@ -39,19 +42,6 @@ app.layout = html.Div([
         sort_action="native",
     ),
 ], style={'fontFamily': 'Arial'})
-
-# Callback to update dashboard
-@app.callback(
-    [Output('summary-stats', 'children'),
-     Output('severity-3d-scatter', 'figure'),
-     Output('severity-histogram', 'figure'),
-     Output('severity-scatter', 'figure'),
-     Output('vulnerabilities-evolution', 'figure'),
-     Output('severity-line', 'figure'),
-     Output('vulnerability-table', 'data')],
-    [Input('ip-dropdown', 'value'),
-     Input('severity-dropdown', 'value')]
-)
 
 # Additional function to map severity to colors
 def severity_to_color(severity):
@@ -63,8 +53,14 @@ def severity_to_color(severity):
     }
     return color_map.get(severity, 'blue')  # Default to 'blue' if severity level is unknown
 
-
-
+@app.callback(
+    [Output('summary-stats', 'children'),
+     Output('severity-histogram', 'figure'),
+     Output('severity-scatter', 'figure'),
+     Output('vulnerability-table', 'data')],
+    [Input('ip-dropdown', 'value'),
+     Input('severity-dropdown', 'value')]
+)
 def update_dashboard(selected_ip, selected_severity):
     filtered_data = data.copy()
     if selected_ip:
@@ -73,7 +69,7 @@ def update_dashboard(selected_ip, selected_severity):
         filtered_data = filtered_data[filtered_data['Severity'] == selected_severity]
     
     if filtered_data.empty:
-        raise PreventUpdate
+        return html.Div("No data available for the selected filters."), {}, {}, []
 
     # Summary Stats
     total_vulnerabilities = len(filtered_data)
@@ -82,6 +78,8 @@ def update_dashboard(selected_ip, selected_severity):
         html.H4(f'Total Vulnerabilities: {total_vulnerabilities}'),
         html.Ul([html.Li(f"{severity}: {count}") for severity, count in severity_counts.items()])
     ])
+
+    # Severity Histogram with distinct colors
     hist_fig = go.Figure()
     for severity in sorted(data['Severity'].unique()):
         filtered = filtered_data[filtered_data['Severity'] == severity]
@@ -93,15 +91,8 @@ def update_dashboard(selected_ip, selected_severity):
     # Severity Scatter Plot (Adjusted for Titles)
     scatter_fig = px.scatter(filtered_data, x='Severity', y='Title', color='Severity', title="Severity by Title")
 
-    # Example 3D Scatter Plot
-    # Assuming you have a 'Risk Score' column for this example. Adjust according to your data.
-    if 'Risk Score' in filtered_data.columns:
-        scatter_3d_fig = px.scatter_3d(filtered_data, x='IP', y='Severity', z='Risk Score',
-                                        color='Severity', title="3D View: IP, Severity, and Risk Score")
-    else:
-        scatter_3d_fig = {"layout": {"title": "3D View: Data not available (Risk Score missing)"}}
+    # Returning the updated figures and data table
+    return summary_stats, hist_fig, scatter_fig, filtered_data.to_dict('records')
 
-    # Return updated figures
-    return summary_stats, hist_fig, scatter_fig, evolution_fig, line_fig, scatter_3d_fig
 if __name__ == '__main__':
     app.run_server(debug=True)
