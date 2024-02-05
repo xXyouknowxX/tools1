@@ -3,8 +3,18 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-# Load your CSV data
-data = pd.read_csv('completeee.csv')
+# Specify your original and new file paths
+original_csv_path = 'completeee.csv'
+cleaned_csv_path = 'cleaned_completeee.csv'
+
+# Clean the CSV file
+clean_csv(original_csv_path, cleaned_csv_path)
+
+# Now, load the cleaned CSV into a Pandas DataFrame
+data = pd.read_csv(cleaned_csv_path)
+
+# Continue with your data processing...
+
 
 # Initialize Dash app
 app = Dash(__name__)
@@ -79,6 +89,7 @@ def update_dashboard(selected_ip, selected_severity):
     scatter_fig.update_layout(xaxis_tickangle=-45)  # Optionally rotate x-axis labels for better readability
 
     
+    
     # Example 3D Scatter Plot
     # Use 'WrappedTitle' for hover text in your 3D scatter plot for better readability
     scatter_3d_fig = px.scatter_3d(filtered_data, x='IP', y='Severity', z='Risk Score' if 'Risk Score' in filtered_data.columns else 'Title',
@@ -103,6 +114,29 @@ def severity_to_color():
         'Low': 'green',
         'Unknown': 'grey'  # Handle any severity levels not explicitly listed
     }
+
+
+def clean_csv(input_filename, output_filename, header_row_index=7):
+    """
+    Reads an input CSV file, skips rows until the header row, and writes the rest to an output CSV file.
+    
+    :param input_filename: Path to the input CSV file.
+    :param output_filename: Path to the cleaned output CSV file.
+    :param header_row_index: The 0-based index of the row containing the header (default is 7 for row 8).
+    """
+    with open(input_filename, 'r', newline='', encoding='utf-8') as infile, \
+         open(output_filename, 'w', newline='', encoding='utf-8') as outfile:
+        reader = csv.reader(infile)
+        writer = csv.writer(outfile)
+        
+        # Skip rows until the header row
+        for _ in range(header_row_index):
+            next(reader)
+        
+        # Write the rest of the rows
+        for row in reader:
+            writer.writerow(row)
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
