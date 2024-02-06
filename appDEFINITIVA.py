@@ -3,51 +3,53 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import csv
-import glob  # Import glob module
+import glob
 
-# Directory where your CSV files are stored
+# Specify the directory where your CSV files are stored
 directory_path = 'path/to/your/csv/files/'
-csv_pattern = directory_path + '*.csv'  # Pattern to match all CSV files
-
-# Function to clean a single CSV file (as before)
-def clean_csv(input_filename, output_filename, header_row_index=7):
-    with open(input_filename, 'r', newline='', encoding='utf-8') as infile, \
-         open(output_filename, 'w', newline='', encoding='utf-8') as outfile:
-        reader = csv.reader(infile, delimiter=';', quotechar='"', escapechar='|')
-        writer = csv.writer(outfile, delimiter=',', quotechar=' ', escapechar='|')
-        
-        for _ in range(header_row_index):
-            next(reader)
-        headers = next(reader)
-        headers = [header.strip('"') for header in headers] and [header.replace('"', '') for header in headers]
-        
-        writer.writerow(headers)
-        
-        for row in reader:
-            writer.writerow(row)
+csv_pattern = directory_path + '*.csv'
 
 # Assuming column names are consistent across all CSV files
 column_names = ['IP', 'DNS', 'NetBIOS', 'OS', 'IP Status', 'QID', 'Title', 'Type', 'Severity', 'Port', 'Protocol', 'FQDN', 'SSL', 'CVE ID', 'Vendor Reference', 'Bugtraq ID', 'Threat', 'Impact', 'Solution', 'Exploitability', 'Associated Malware', 'Results', 'PCI Vuln', 'Instance', 'Category']
 
-# List to hold dataframes from each file
-dataframes = []
+def process_csv_files(csv_files, header_row_index=7, column_names=column_names):
+    dataframes = []
+    for file_path in csv_files:
+        cleaned_csv_path = file_path.replace('.csv', '_cleaned.csv')
+        # Assuming the clean_csv function modifies the file directly
+        clean_csv(file_path, cleaned_csv_path, header_row_index=header_row_index)
+        try:
+            df = pd.read_csv(cleaned_csv_path, delimiter=',', names=column_names, header=None, skiprows=header_row_index)
+            dataframes.append(df)
+        except Exception as e:
+            print(f"Failed to process {file_path}: {e}")
+    return pd.concat(dataframes, ignore_index=True) if dataframes else pd.DataFrame()
 
-# Process each file found by glob
-for file_path in glob.glob(csv_pattern):
-    # Generate a cleaned CSV path or use the same file if cleaning is not needed
-    cleaned_csv_path = file_path.replace('.csv', '_cleaned.csv')
-    clean_csv(file_path, cleaned_csv_path, header_row_index=7)  # Clean the file if needed
-    
-    # Load the cleaned CSV into a DataFrame
-    df = pd.read_csv(cleaned_csv_path, delimiter=',', names=column_names, header=0, skiprows=7)
-    dataframes.append(df)
+# Clean the CSV file
+def clean_csv(input_filename, output_filename, header_row_index=7):
+    with open(input_filename, 'r', newline='', encoding='utf-8') as infile, open(output_filename, 'w', newline='', encoding='utf-8') as outfile:
+        reader = csv.reader(infile, delimiter=';', quotechar='"', escapechar='|')
+        writer = csv.writer(outfile, delimiter=',', quotechar=' ', escapechar='|')
+        for _ in range(header_row_index):
+            next(reader)
+        headers = next(reader)
+        headers = [header.strip('"') for header in headers] and [header.replace('"', '') for header in headers]
+        writer.writerow(headers)
+        for row in reader:
+            writer.writerow(row)
 
-# Concatenate all DataFrames into one
-data = pd.concat(dataframes, ignore_index=True)
-dx = pd.read_csv('History.csv')  # Assuming this is another file you need
+# List all CSV files in the directory
+csv_files = glob.glob(csv_pattern)
+
+# Process all CSV files and concatenate into a single DataFrame
+data = process_csv_files(csv_files) if csv_files else pd.DataFrame()
+
+dx = pd.read_csv('History.csv')  # Load another necessary CSV file if needed
 
 # Initialize Dash app
 app = Dash(__name__)
+# App layout and callbacks setup goes here
+
 
 
 # App layout
