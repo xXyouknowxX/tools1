@@ -12,37 +12,29 @@ cleaned_csv_path = 'cleaned_completeee.csv'
 app = Dash(__name__)
 # Clean the CSV file
 
-def clean_csv_v2(input_filename, output_filename, header_row_index=7):
+def clean_csv_simple(input_filename, output_filename, header_row_index=7):
     with open(input_filename, 'r', encoding='utf-8') as infile, \
             open(output_filename, 'w', newline='', encoding='utf-8') as outfile:
         
-        # Read all lines from the input file
-        lines = infile.readlines()
+        # Skip to the header row
+        for _ in range(header_row_index):
+            next(infile)
         
-        # Process the header row to remove surrounding quotes and any unwanted characters
-        header = lines[header_row_index].strip()
-        if header.startswith('"') and header.endswith('"'):
-            header = header[1:-1]  # Remove the first and last character if they are quotes
-        header = header.replace('""', '"')  # Replace double quotes with single quotes if needed
-        
-        # Optionally, remove quotes from each header field
-        header_fields = header.split(';')
-        header_fields = [field.strip('"') for field in header_fields]
-        
-        # Join the header fields back together, now cleaned, using the desired delimiter (e.g., comma)
-        cleaned_header = ','.join(header_fields)
-        
-        # Write the cleaned header to the output file
+        # Process and write the header
+        header = next(infile).strip()
+        # Assuming your headers and each cell are wrapped in quotes like "Header";
+        # This will remove the first and last character if they are quotes
+        header = header[1:-1]
+        # Now replace ";" with "," to correct the entire header row
+        cleaned_header = header.replace('";"', ',')
         outfile.write(cleaned_header + '\n')
         
-        # Write the rest of the file, starting from the row after the header
-        for line in lines[header_row_index + 1:]:
-            # Replace semicolons with commas for each row if changing delimiter
-            # Optionally, strip surrounding quotes from each field in the row
-            cleaned_line = line.strip().replace('";"', '","').strip('"')
-            outfile.write(cleaned_line + '\n')
+        # Process and write each row
+        for row in infile:
+            cleaned_row = row.strip()[1:-1]  # Remove leading and trailing quotes
+            cleaned_row = cleaned_row.replace('";"', ',')  # Replace inner ";"
+            outfile.write(cleaned_row + '\n')
 
-            
 # Load your CSV data
 #data_types = {'IP': str, 'Severity': str, 'Title': str}
 data = pd.read_csv('cleaned_completeee.csv',delimiter=',')
