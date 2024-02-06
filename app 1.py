@@ -12,28 +12,31 @@ cleaned_csv_path = 'cleaned_completeee.csv'
 app = Dash(__name__)
 # Clean the CSV file
 
-def clean_csv_simple(input_filename, output_filename, header_row_index=7):
+def clean_csv_direct(input_filename, output_filename, header_row_index=7):
     with open(input_filename, 'r', encoding='utf-8') as infile, \
-            open(output_filename, 'w', newline='', encoding='utf-8') as outfile:
+         open(output_filename, 'w', newline='', encoding='utf-8') as outfile:
         
-        # Skip to the header row
+        # Skip lines until reaching the header row
         for _ in range(header_row_index):
             next(infile)
         
-        # Process and write the header
+        # Handle the header row: strip quotes and replace semicolons with commas
         header = next(infile).strip()
-        # Assuming your headers and each cell are wrapped in quotes like "Header";
-        # This will remove the first and last character if they are quotes
-        header = header[1:-1]
-        # Now replace ";" with "," to correct the entire header row
-        cleaned_header = header.replace('";"', ',')
-        outfile.write(cleaned_header + '\n')
+        header = header.replace('"', '')  # Remove all quotes
+        header = header.replace(';', ',')  # Replace semicolon delimiter with comma
+        outfile.write(header + '\n')
         
-        # Process and write each row
-        for row in infile:
-            cleaned_row = row.strip()[1:-1]  # Remove leading and trailing quotes
-            cleaned_row = cleaned_row.replace('";"', ',')  # Replace inner ";"
-            outfile.write(cleaned_row + '\n')
+        # Process each subsequent row
+        for line in infile:
+            line = line.strip()
+            line = line.replace('"', '')  # Remove all quotes
+            line = line.replace(';', ',')  # Replace semicolon delimiter with comma
+            outfile.write(line + '\n')
+
+clean_csv_direct(original_csv_path, cleaned_csv_path)
+
+# Now, you should be able to load the cleaned CSV without encountering low memory issues
+data = pd.read_csv(cleaned_csv_path)
 
 # Load your CSV data
 #data_types = {'IP': str, 'Severity': str, 'Title': str}
