@@ -1,0 +1,20 @@
+SSH Algorithm Enumeration
+Purpose: Evaluate the security of the cryptographic algorithms supported by an SSH server. This involves determining which cryptographic algorithms (for key exchange, encryption, and MAC) the server is configured to accept from clients.
+
+Description:
+SSH Algorithm Enumeration is a security check aimed at identifying the types and strengths of cryptographic algorithms that an SSH server supports. This includes algorithms for key exchange, encryption, and message authentication coding (MAC). The purpose is to assess the robustness of these algorithms against known vulnerabilities and to ensure compliance with modern cryptographic standards. Weak or outdated algorithms can make the SSH server vulnerable to various cryptographic attacks, potentially compromising secure communications.
+
+Tools Suggested:
+
+OpenSSH: Using its verbose mode (ssh -vvv) to list supported algorithms.
+Nmap: With the ssh2-enum-algos script to enumerate supported algorithms.
+Methodology:
+
+Use tools like Nmap or manual connection attempts with verbose debugging to list all cryptographic algorithms that the SSH server agrees to use.
+Compare the list against known secure configurations and recent cryptographic standards to identify any weak or deprecated algorithms.
+Report on findings with recommendations for disabling weak or vulnerable algorithms in favor of stronger, more secure options.
+SSH Supported Authentication Methods
+Purpose: Determine the authentication mechanisms that an SSH server allows for user authentication. This helps assess the server's exposure to various types of authentication-related attacks, such as brute force or credential stuffing.
+
+Description:
+SSH Supported Authentication Methods involves checking which methods an SSH server uses to authenticate users. Common methods include password-based authentication, public key authentication, and keyboard-interactive authentication. The test aims to identify any weak or insecure authentication configurations that could allow unauthorized access. For example, password-based authentication might be vulnerable to brute-force attacks if not coupled with rate limiting or strong password policies.
